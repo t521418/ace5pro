@@ -146,7 +146,7 @@ jobs:
         run: |
           git clone https://github.com/t521418/AnyKernel3.git --depth=1
           rm -rf AnyKernel3/.git AnyKernel3/push.sh
-          cp Image AnyKernel3/
+          cp Image AnyKernel3.zip/
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
