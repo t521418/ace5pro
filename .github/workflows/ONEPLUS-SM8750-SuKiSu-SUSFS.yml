@@ -17,7 +17,7 @@ on:
       FEIL:
         description: "配置文件"
         required: true
-        default: 'oneplus_ace5_pro'
+        default: 'JiuGeFaCai_oneplus_ace5_pro_v'
       CPUD:
         description: "处理器代号"
         required: true
@@ -31,7 +31,7 @@ on:
         required: true
         default: '6.6'
       KERNEL_NAME:
-        description: "修改内核名称"
+        description: "修改内核名称(不支持中文)"
         required: true
         default: '-android15-521'
       
