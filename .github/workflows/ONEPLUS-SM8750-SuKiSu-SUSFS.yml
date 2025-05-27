@@ -195,7 +195,7 @@ jobs:
         run: |
             if [ "${{ github.event.inputs.boot2 }}" = "true" ]; then
             KERNEL_DIR="/kernel_workspace/kernel_platform/common"
-            wget -O /tmp/property.patch "https://raw.githubusercontent.com/t521418/Action-Build/main/patchs/property.c"
+            wget -O /tmp/property.patch "https://raw.githubusercontent.com/t521418/Action-Build/main/patchs/property.patch"
             cd "$KERNEL_DIR" || exit
             patch -p1 < /tmp/property.patch
             fi
