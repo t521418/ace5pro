@@ -45,7 +45,7 @@ on:
         type: boolean
         description: "是否启用KPM"
         required: true
-        default: true
+        default: false
   
 
 jobs:
