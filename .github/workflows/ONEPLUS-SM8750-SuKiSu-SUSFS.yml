@@ -212,7 +212,6 @@ return 0;
 }
 EXPORT_SYMBOL_GPL(of_property_read_string);' drivers/of/property.c
             echo "正在打OGKI转换GKI补丁"
-            patch -p1 -F 3 < hmbird_patch.patch
             echo "OGKI转换GKI 修改完成"
             fi
           
