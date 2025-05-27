@@ -39,17 +39,15 @@ on:
         required: true
         default: true
 
-      boot1:
-        type: boolean
-        description: "是否启用方法1修补boot"
+      boot:
+        type: choice
+        description: "选择修补boot方法"
         required: true
-        default: true
-     
-      boot2:
-        type: boolean
-        description: "是否启用方法2修补boot"
-        required: true
-        default: false
+        default: boot1
+        options:
+          - boot1
+          - boot2
+  
 
 jobs:
   build:
@@ -181,10 +179,10 @@ jobs:
 
       - name: boot1
         run: |
-            if [ "${{ github.event.inputs.boot1 }}" = "true" ]; then
+            if [ "${{ github.event.inputs.boot }}" = "boot1" ]; then
             cd kernel_workspace/kernel_platform/common
             sed -i '1iobj-y += hmbird_patch.o' drivers/Makefile
-            wget https://github.com/t521418/Action-Build/raw/main/patchs/hmbird_patch.patch
+            wget https://github.com/t521418/patch/raw/main/hmbird_patch.patch
             echo "正在打OGKI转换GKI补丁"
             patch -p1 -F 3 < hmbird_patch.patch
             echo "OGKI转换GKI patch完成"
@@ -193,9 +191,9 @@ jobs:
         
       - name: boot2
         run: |
-            if [ "${{ github.event.inputs.boot2 }}" = "true" ]; then
+            if [ "${{ github.event.inputs.boot }}" = "boot2" ]; then
             cd kernel_workspace/kernel_platform/common
-            wget https://github.com/t521418/Action-Build/raw/main/patchs/property.patch
+            wget https://github.com/t521418/patch/raw/main/property.patch
             echo "正在打OGKI转换GKI补丁"
             patch -p1 -F 3 < property.patch
             echo "OGKI转换GKI patch完成"
