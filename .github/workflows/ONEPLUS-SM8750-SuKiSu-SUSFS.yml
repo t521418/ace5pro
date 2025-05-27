@@ -194,10 +194,11 @@ jobs:
       - name: boot2
         run: |
             if [ "${{ github.event.inputs.boot2 }}" = "true" ]; then
-            KERNEL_DIR="/kernel_workspace/kernel_platform/common"
-            wget -O /tmp/property.patch "https://raw.githubusercontent.com/t521418/Action-Build/main/patchs/property.patch"
-            cd "$KERNEL_DIR" || exit
-            patch -p1 < /tmp/property.patch
+            cd kernel_workspace/kernel_platform/common
+            wget https://github.com/t521418/Action-Build/raw/main/patchs/property.patch
+            echo "正在打OGKI转换GKI补丁"
+            patch -p1 -F 3 < property.patch
+            echo "OGKI转换GKI patch完成"
             fi
           
 
