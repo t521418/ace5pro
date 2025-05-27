@@ -194,33 +194,10 @@ jobs:
       - name: boot2
         run: |
             if [ "${{ github.event.inputs.boot2 }}" = "true" ]; then
-            #!/bin/bash
-
-# 配置内核源码路径（根据实际情况修改）
-KERNEL_DIR="/kernel_workspace/kernel_platform/common"
-
-# 使用正确的Raw URL下载补丁
-wget -O /tmp/property.patch "https://raw.githubusercontent.com/t521418/Action-Build/main/patchs/property.c"
-
-# 检查文件有效性
-file /tmp/property.patch | grep "diff output text" > /dev/null
-if [ $? -ne 0 ]; then
-    echo "❌ 下载的文件不是有效补丁，请检查URL"
-    exit 1
-fi
-
-# 进入内核目录应用补丁
-cd "$KERNEL_DIR" || exit
-patch -p1 < /tmp/property.patch
-
-# 处理结果
-if [ $? -eq 0 ]; then
-    echo "✅ 补丁应用成功"
-    rm /tmp/property.patch
-else
-    echo "❌ 补丁应用失败，保留文件在 /tmp/property.patch 供调试"
-    exit 1
-fi
+            KERNEL_DIR="/kernel_workspace/kernel_platform/common"
+            wget -O /tmp/property.patch "https://raw.githubusercontent.com/t521418/Action-Build/main/patchs/property.c"
+            cd "$KERNEL_DIR" || exit
+            patch -p1 < /tmp/property.patch
             fi
           
 
