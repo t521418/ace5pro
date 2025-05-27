@@ -39,6 +39,18 @@ on:
         required: true
         default: true
 
+      boot1:
+        type: boolean
+        description: "是否启用方法1修补boot"
+        required: true
+        default: true
+     
+      boot2:
+        type: boolean
+        description: "是否启用方法2修补boot"
+        required: true
+        default: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -167,14 +179,27 @@ jobs:
          cd kernel_workspace/kernel_platform
          sed -i 's/res="\$res\$(cat "\$file")"/res="${{ github.event.inputs.KERNEL_NAME }}"/g' ./common/scripts/setlocalversion
 
-      - name: Convert HMBIRD_OGKI to HMBIRD_GKI
+      - name: boot1
         run: |
+            if [ "${{ github.event.inputs.boot1 }}" = "true" ]; then
             cd kernel_workspace/kernel_platform/common
             sed -i '1iobj-y += hmbird_patch.o' drivers/Makefile
             wget https://github.com/t521418/Action-Build/raw/main/patchs/hmbird_patch.patch
             echo "正在打OGKI转换GKI补丁"
             patch -p1 -F 3 < hmbird_patch.patch
             echo "OGKI转换GKI patch完成"
+            fi
+            
+      - name: boot2
+        run: |
+            if [ "${{ github.event.inputs.boot2 }}" = "true" ]; then
+            cd kernel_workspace/kernel_platform/common
+            sed -i '1iobj-y += property.c' drivers/Makefile
+            wget https://github.com/t521418/Action-Build/blob/main/patchs/property.c
+            echo "正在打OGKI转换GKI补丁"
+            patch -p1 -F 3 < property.c
+            echo "OGKI转换GKI patch完成"
+            fi
           
 
       - name: Add sched_ext
