@@ -2,6 +2,14 @@ name: OnePlus SM8750 Build SuKiSu SUSFS
 on:
   workflow_dispatch:
     inputs:
+      boot:
+        type: choice
+        description: "选择修补boot方法"
+        required: true
+        default: boot1
+        options:
+          - boot1
+          - boot2
       CPU:
         description: "分支"
         required: true
@@ -38,15 +46,6 @@ on:
         description: "是否启用KPM"
         required: true
         default: true
-
-      boot:
-        type: choice
-        description: "选择修补boot方法"
-        required: true
-        default: boot1
-        options:
-          - boot1
-          - boot2
   
 
 jobs:
