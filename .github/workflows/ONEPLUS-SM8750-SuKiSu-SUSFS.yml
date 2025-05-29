@@ -33,7 +33,7 @@ on:
       KERNEL_NAME:
         description: "修改内核名称(支持表情+中文)"
         required: true
-        default: '✌️✌️✌️'
+        default: '666'
       KERNEL_TIME:
        description: "内核构建日期更改(默认为原厂)"
        required: true
