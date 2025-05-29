@@ -6,7 +6,7 @@ on:
         type: choice
         description: "选择修补boot方法"
         required: true
-        default: boot1
+        default: boot2
         options:
           - boot1
           - boot2
@@ -34,6 +34,11 @@ on:
         description: "修改内核名称(支持表情+中文)"
         required: true
         default: '✌️✌️✌️'
+
+      KERNEL_TIME:
+       description: "内核构建日期更改(默认为原厂)"
+       required: true
+       default: '2024-12-17 23:36:49 UTC'
       
       lz4kd:
         type: boolean
@@ -193,26 +198,11 @@ jobs:
          sed -i 's/${scm_version}//' ./common/scripts/setlocalversion
          sudo sed -i 's/-4k/${{ github.event.inputs.KERNEL_NAME }}/g' ./common/arch/arm64/configs/gki_defconfig
       
-            # 步骤1：设置动态默认时间
-      - name: Set default kernel time
-        id: set_time
-        run: |
-          if [ -z "${{ github.event.inputs.KERNEL_TIME }}" ]; then
-            DEFAULT_TIME=$(date -u +'%Y-%m-%d %H:%M:%S UTC')
-            echo "Using default time: $DEFAULT_TIME"
-            echo "KERNEL_TIME=$DEFAULT_TIME" >> $GITHUB_ENV
-          else
-            echo "Using user provided time"
-            echo "KERNEL_TIME=${{ github.event.inputs.KERNEL_TIME }}" >> $GITHUB_ENV
-          fi
-      
-      # 步骤2：转换为时间戳
       - name: Set Kernel build timestamp
         run: |
-          SOURCE_DATE_EPOCH=$(date -d "$KERNEL_TIME" +%s)
+          export SOURCE_DATE_EPOCH=$(date -d "${{ github.event.inputs.KERNEL_TIME }}" +%s)
           echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> $GITHUB_ENV
-          echo "Using timestamp: $SOURCE_DATE_EPOCH"
-      
+     
       - name: boot1
         run: |
             if [ "${{ github.event.inputs.boot }}" = "boot1" ]; then
