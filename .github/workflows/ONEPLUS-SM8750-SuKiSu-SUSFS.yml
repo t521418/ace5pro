@@ -31,7 +31,7 @@ on:
         required: true
         default: '6.6'
       KERNEL_NAME:
-        description: "修改内核名称(支持表情+中文)"
+        description: "修改内核名称(不支持表情中文)"
         required: true
         default: '-android15-8-g013ec21bba94-abogki383916444'
       
