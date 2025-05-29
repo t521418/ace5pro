@@ -31,10 +31,9 @@ on:
         required: true
         default: '6.6'
       KERNEL_NAME:
-        description: "修改内核名称(不支持表情中文)"
+        description: "修改内核名称(不支持中文和表情)"
         required: true
         default: '-android15-8-g013ec21bba94-abogki383916444'
-      
         
       KPM:
         type: boolean
@@ -176,9 +175,7 @@ jobs:
       - name: Add make name
         run: |
          cd kernel_workspace/kernel_platform
-         sed -i 's/${scm_version}//' ./common/scripts/setlocalversion
-         sudo sed -i 's/-4k/${{ github.event.inputs.KERNEL_NAME }}/g' ./common/arch/arm64/configs/gki_defconfig
-      
+         sed -i 's/res="\$res\$(cat "\$file")"/res="${{ github.event.inputs.KERNEL_NAME }}"/g' ./common/scripts/setlocalversion
       
       - name: boot1
         run: |
