@@ -52,6 +52,12 @@ on:
         description: "是否启用KPM"
         required: true
         default: false
+
+      KERNEL_TIME:
+       description: "内核构建日期更改(默认为原厂)"
+       required: true
+       default: '2024-12-17 23:36:49 UTC'
+      
   
 
 jobs:
@@ -215,7 +221,12 @@ jobs:
             patch -p1 -F 3 < property.patch
             echo "OGKI转换GKI patch完成"
             fi
-          
+
+      - name: Set Kernel build timestamp
+        run: |
+          export SOURCE_DATE_EPOCH=$(date -d "${{ github.event.inputs.KERNEL_TIME }}" +%s)
+          echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> $GITHUB_ENV
+     
 
       - name: Add sched_ext
         run: |
