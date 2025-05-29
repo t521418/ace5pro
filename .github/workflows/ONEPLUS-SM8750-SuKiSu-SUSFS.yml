@@ -34,10 +34,6 @@ on:
         description: "修改内核名称(支持表情+中文)"
         required: true
         default: '666'
-      KERNEL_TIME:
-       description: "内核构建日期更改(默认为原厂)"
-       required: true
-       default: '2024-12-17 23:36:49 UTC'
       
       lz4kd:
         type: boolean
@@ -197,11 +193,7 @@ jobs:
          sed -i 's/${scm_version}//' ./common/scripts/setlocalversion
          sudo sed -i 's/-4k/${{ github.event.inputs.KERNEL_NAME }}/g' ./common/arch/arm64/configs/gki_defconfig
       
-      - name: Set Kernel build timestamp
-        run: |
-          export SOURCE_DATE_EPOCH=$(date -d "${{ github.event.inputs.KERNEL_TIME }}" +%s)
-          echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> $GITHUB_ENV
-     
+      
       - name: boot1
         run: |
             if [ "${{ github.event.inputs.boot }}" = "boot1" ]; then
