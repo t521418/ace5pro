@@ -239,6 +239,8 @@ jobs:
 
       - name: Build kernel
         run: |
+         cd kernel_workspace/kernel_platformAdd commentMore actions
+         tools/bazel run --config=fast --config=stamp --lto=thin //common:kernel_aarch64_dist -- --dist_dir=dist
          # 加入 clang 到 PATH 
          export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r510928/bin:$PATH" 
          # 加入 ccache 到 PATH 
