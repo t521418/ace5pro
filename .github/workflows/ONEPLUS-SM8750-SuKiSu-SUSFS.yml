@@ -66,7 +66,8 @@ jobs:
          git config --global user.name "build"
          git config --global user.email "2772000679@qq.com"
 
-      - name: Install dependencies
+      # 1. 安装构建依赖（包括 ccache）
+      - name: Install Dependencies
         run: |
          sudo apt-get update
          sudo apt-get install -y python3 git curl ccache libelf-dev
@@ -80,18 +81,18 @@ jobs:
          restore-keys: |
           ccache-${{ runner.os }}-
 
-      # 3. 设置 ccache 环境变量 
-      - name: Setup ccache environment 
-        run: | 
-         echo "CCACHE_DIR=/home/runner/.ccache" >> $GITHUB_ENV 
-         echo "CCACHE_MAXSIZE=8G" >> $GITHUB_ENV 
-         echo "CCACHE_COMPILERCHECK=%compiler% -dumpmachine; %compiler% -dumpversion" >> $GITHUB_ENV 
-         echo "CCACHE_NOHASHDIR=true" >> $GITHUB_ENV 
-         echo "CCACHE_HARDLINK=true" >> $GITHUB_ENV 
-         echo "/usr/lib/ccache" >> $GITHUB_PATH # 将 /usr/lib/ccache 添加到 PAT 
+      # 3. 设置 ccache 环境变量
+      - name: Setup ccache environment
+        run: |
+         echo "CCACHE_DIR=/home/runner/.ccache" >> $GITHUB_ENV
+         echo "CCACHE_MAXSIZE=8G" >> $GITHUB_ENV
+         echo "CCACHE_COMPILERCHECK=%compiler% -dumpmachine; %compiler% -dumpversion" >> $GITHUB_ENV
+         echo "CCACHE_NOHASHDIR=true" >> $GITHUB_ENV
+         echo "CCACHE_HARDLINK=true" >> $GITHUB_ENV
+         echo "/usr/lib/ccache" >> $GITHUB_PATH  # 将 /usr/lib/ccache 添加到 PAT
          
-      - name: Show ccache stats 
-        run: | 
+      - name: Show ccache stats
+        run: |
          ccache -s || true
       
       - name: Install repo tool
@@ -237,22 +238,31 @@ jobs:
          sed -i.bak '/# include "ext.c"/a\# include "hmbird_sched_proc_main.c"\n#endif\n\n#ifdef CONFIG_SLIM_SCHED\n# include "slim_sysctl.c"' build_policy.c
 
 
-      - name: Build kernel
+      - name: Build Kernel
         run: |
-          # 加入 clang 到 PATH 
-          export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r510928/bin:$PATH" 
-          # 加入 ccache 到 PATH 
-          export PATH="/usr/lib/ccache:$PATH" 
-          # 设置一些通用参数（便于后续维护） 
-          export MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang \ RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc \ PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole \ LD=ld.lld HOSTLD=ld.lld O=out KCFLAGS=-Wno-error" 
-          # 进入源码目录 
-          cd kernel_workspace/kernel_platform/common 
-          # 执行 defconfig 
-          make -j$(nproc) $MAKE_ARGS gki_defconfig 
-          # 编译全部目标 
-          make -j$(nproc) $MAKE_ARGS all 
-          # 创建输出目录并复制 Image 
-          mkdir -p ../dist cp out/arch/arm64/boot/Image ../dist/
+         # 加入 clang 到 PATH
+         export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r510928/bin:$PATH"
+         # 加入 ccache 到 PATH
+         export PATH="/usr/lib/ccache:$PATH"  
+
+         # 设置一些通用参数（便于后续维护）
+         export MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang \
+         RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc \
+         PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole \
+         LD=ld.lld HOSTLD=ld.lld O=out KCFLAGS=-Wno-error"
+
+         # 进入源码目录
+         cd kernel_workspace/kernel_platform/common
+
+         # 执行 defconfig
+         make -j$(nproc) $MAKE_ARGS gki_defconfig
+
+         # 编译全部目标
+         make -j$(nproc) $MAKE_ARGS all
+
+         # 创建输出目录并复制 Image
+         mkdir -p ../dist
+         cp out/arch/arm64/boot/Image ../dist/
          
       - name: Make AnyKernel3
         run: |
