@@ -226,7 +226,7 @@ jobs:
 
       - name: Set build timestamp
         run: |         
-         export SOURCE_DATE_EPOCH=$(date -d "2024-12-17 23:36:49 UTC" +%s)
+         export SOURCE_DATE_EPOCH=$(date -d "Tue Dec 17 23:36:49 UTC 2024" +%s)
          echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> $GITHUB_ENV
                    
       - name: Add sched_ext
@@ -247,7 +247,7 @@ jobs:
          export PATH="/usr/lib/ccache:$PATH" 
 
          # 设置固定内核构建时间
-         export KERNEL_TIME="2024-12-17 23:36:49 UTC"
+         export KERNEL_TIME="Tue Dec 17 23:36:49 UTC 2024"
          export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
          export SOURCE_DATE_EPOCH=$(date -d "$KERNEL_TIME" +%s)
 
