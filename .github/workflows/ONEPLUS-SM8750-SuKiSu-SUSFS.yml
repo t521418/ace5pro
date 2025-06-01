@@ -266,6 +266,9 @@ jobs:
          # 进入源码目录
          cd kernel_workspace/kernel_platform/common
 
+         #o3编译
+         make KCFLAGS="-O3"
+         
          # 执行 defconfig
          make -j$(nproc) $MAKE_ARGS gki_defconfig
 
