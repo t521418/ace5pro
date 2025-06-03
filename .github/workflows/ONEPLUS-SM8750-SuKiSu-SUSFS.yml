@@ -197,6 +197,15 @@ jobs:
           cd common
           git add -A && git commit -a -m "BUILD Kernel"          
       
+      - name: 启用LTO
+        run: |
+         cd kernel_workspace/kernel_platform
+         echo "CONFIG_LTO_CLANG=y" >> ./common/arch/arm64/configs/gki_defconfig
+         echo "CONFIG_LTO_CLANG_THIN=y" >> ./common/arch/arm64/configs/gki_defconfig
+         sudo sed -i 's/check_defconfig//' ./common/build.config.gki
+         cd common
+         git add -A && git commit -a -m "BUILD Kernel with LTO enabled"
+      
       - name: Add make name
         run: |
          cd kernel_workspace/kernel_platform
@@ -225,15 +234,6 @@ jobs:
             echo "OGKI转换GKI patch完成"
             fi
 
-      - name: 启用LTO
-        run: |
-         cd kernel_workspace/kernel_platform
-         echo "CONFIG_LTO_CLANG=y" >> ./common/arch/arm64/configs/gki_defconfig
-         echo "CONFIG_LTO_CLANG_THIN=y" >> ./common/arch/arm64/configs/gki_defconfig
-         sudo sed -i 's/check_defconfig//' ./common/build.config.gki
-         cd common
-         git add -A && git commit -a -m "BUILD Kernel with LTO enabled"
-      
       - name: Set build timestamp
         run: |         
          export SOURCE_DATE_EPOCH=$(date -d "Tue Dec 17 23:36:49 UTC 2024" +%s)
