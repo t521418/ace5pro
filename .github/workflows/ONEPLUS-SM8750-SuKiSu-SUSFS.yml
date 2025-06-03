@@ -67,6 +67,10 @@ jobs:
          git config --global user.email "2772000679@qq.com"
 
       # 1. 安装构建依赖（包括 ccache）
+      # 拉取仓库  
+      - name: Checkout  
+        uses: actions/checkout@v4  
+      
       - name: Install Dependencies
         run: |
          sudo apt-get update
