@@ -252,7 +252,7 @@ jobs:
          sed -i.bak '/# include "ext.c"/a\# include "hmbird_sched_proc_main.c"\n#endif\n\n#ifdef CONFIG_SLIM_SCHED\n# include "slim_sysctl.c"' build_policy.c
 
 
-       5. 编译内核   
+       #5. 编译内核
       - name: Build Kernel
         run: |
          # 加入 clang 到 PATH
