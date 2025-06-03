@@ -287,6 +287,10 @@ jobs:
       - name: Show ccache stats
         run: ccache -s || true
       
+      - name: 验证内核构建时间
+        run: |
+         strings kernel_workspace/kernel_platform/common/out/vmlinux | grep "UTC" 
+      
       - name: Make AnyKernel3
         run: |
          cd kernel_workspace/kernel_platform/dist/
