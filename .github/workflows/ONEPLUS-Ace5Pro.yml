@@ -41,12 +41,10 @@ on:
         default: false
         type: boolean
         
-
-
       LTO:
         description: '启用 LTO'
         required: false
-        default: false
+        default: true
         type: boolean
   
 
