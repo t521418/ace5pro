@@ -14,10 +14,6 @@ on:
       value: boot2
   constraints:
     - validate: "必须为有效选项"
-  notes: |
-    推荐选择：
-    • 旧设备选 boot1
-    • 新硬件选 boot2 可获得更好性能
       CPU:
         description: "分支"
         required: true
