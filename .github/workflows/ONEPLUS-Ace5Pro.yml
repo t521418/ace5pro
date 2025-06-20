@@ -3,17 +3,13 @@ on:
   workflow_dispatch:
     inputs:
       boot:
-  type: choice
-  description: "选择系统启动修补方法"
-  required: false      # 允许用户不显式选择
-  default: boot2       # 不选时默认用boot2
-  options:
-    - label: "安全兼容模式 (boot1)"
-      value: boot1
-    - label: "高性能模式 (boot2)"
-      value: boot2
-  constraints:
-    - validate: "必须为有效选项"
+        type: choice
+        description: "选择修补boot方法"
+        required: false
+        default: boot2
+        options:
+          - boot1
+          - boot2
       CPU:
         description: "分支"
         required: true
