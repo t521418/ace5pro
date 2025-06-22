@@ -140,14 +140,17 @@ jobs:
       - name: Set up susfs
         run: |
            cd kernel_workspace
-           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b gki-${{ github.event.inputs.ANDROID_VERSION }}-${{ github.event.inputs.KERNEL_VERSION }}
-           git clone https://github.com/t521418/kernel_patches.git
-           git clone https://github.com/ExmikoN/SukiSU_patch.git
-
+           if [ "${{ github.event.inputs.CPU }}" = "sm8750" ]; then
+            git clone https://github.com/JiuGeFaCai/susfs4ksu.git
+           else
+            git clone https://gitlab.com/simonpunk/susfs4ksu.git -b gki-${{ github.event.inputs.ANDROID_VERSION }}-${{ github.event.inputs.KERNEL_VERSION }}
+           fi 
+           git clone https://github.com/ShirkNeko/SukiSU_patch.git
            cd kernel_platform        
            cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_VERSION }}-${{ github.event.inputs.KERNEL_VERSION }}.patch ./common/
            cp ../susfs4ksu/kernel_patches/fs/* ./common/fs/
            cp ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
+
            if [ "${{ github.event.inputs.ZRAM }}" = "true" ]; then
            echo "正在打zram补丁"
            cp -r ../SukiSU_patch/other/zram/lz4k/include/linux/* ./common/include/linux
@@ -156,6 +159,7 @@ jobs:
            cp -r ../SukiSU_patch/other/zram/lz4k_oplus ./common/lib/
            echo "zram_patch完成"
            fi
+           
            # Apply patches
            cd ./common
 
