@@ -140,22 +140,15 @@ jobs:
       - name: Set up susfs
         run: |
            cd kernel_workspace
-            git clone https://github.com/JiuGeFaCai/susfs4ksu.git
-            git clone https://gitlab.com/simonpunk/susfs4ksu.git -b gki-${{ github.event.inputs.ANDROID_VERSION }}-${{ github.event.inputs.KERNEL_VERSION }}
-            git clone https://github.com/ShirkNeko/SukiSU_patch.git
+           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b gki-${{ github.event.inputs.ANDROID_VERSION }}-${{ github.event.inputs.KERNEL_VERSION }}
+           git clone https://github.com/SukiSU-Ultra/SukiSU_patch.git
+           
            cd kernel_platform        
            cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_VERSION }}-${{ github.event.inputs.KERNEL_VERSION }}.patch ./common/
            cp ../susfs4ksu/kernel_patches/fs/* ./common/fs/
            cp ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
 
-           if [ "${{ github.event.inputs.ZRAM }}" = "true" ]; then
-           echo "正在打zram补丁"
-           cp -r ../SukiSU_patch/other/zram/lz4k/include/linux/* ./common/include/linux
-           cp -r ../SukiSU_patch/other/zram/lz4k/lib/* ./common/lib
-           cp -r ../SukiSU_patch/other/zram/lz4k/crypto/* ./common/crypto
-           cp -r ../SukiSU_patch/other/zram/lz4k_oplus ./common/lib/
-           echo "zram_patch完成"
-           fi
+           
            
            # Apply patches
            cd ./common
@@ -168,6 +161,10 @@ jobs:
            patch -p1 -F 3 < syscall_hooks.patch
            echo "完成"
            
+      - name: ⚙️ Set KERNEL_TIME (设置对应机型构建时间)
+        run: |
+          echo 'KERNEL_TIME=Tue Dec 17 23:36:49 UTC 2024' >> $GITHUB_ENV
+      
       - name: Apply Hide Stuff Patches
         run: |
           cd kernel_workspace/kernel_platform/common
@@ -176,26 +173,52 @@ jobs:
           patch -p1 -F 3 < 69_hide_stuff.patch
           echo "隐藏应用_patch完成"
           
-      - name: Apply LZ4KD
-        if: ${{ github.event.inputs.ZRAM == 'true' }}
+      - name: 🔧 Update compression algorithms (更新压缩算法)
+        if: ${{ inputs.enable_feature_y }}
         run: |
           cd kernel_workspace/kernel_platform/common
-            cp ../../SukiSU_patch/other/zram/zram_patch/${{ github.event.inputs.KERNEL_VERSION }}/lz4kd.patch ./
-            echo "正在打lz4kd补丁"
-            patch -p1 -F 3 < lz4kd.patch || true
-            echo 'lz4kd_patch完成'
-            cp ../../SukiSU_patch/other/zram/zram_patch/${{ github.event.inputs.KERNEL_VERSION }}/lz4k_oplus.patch ./
-            echo "正在打lz4k_oplus补丁"
-            patch -p1 -F 3 < lz4k_oplus.patch || true
-            echo 'lz4k_oplus_patch完成'
-           
-      - name: Add SUSFS Configuration Settings
+          
+          # 更新LZ4实现
+          curl -sSLO https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/lz4/lz4_decompress.c
+          curl -sSLO https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/lz4/lz4defs.h
+          curl -sSLO https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/lz4/lz4_compress.c
+          curl -sSLO https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/lz4/lz4hc_compress.c
+          
+          # 更新Zstd实现
+          zstd_base="https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/zstd"
+          mkdir -p lib/zstd && cd lib/zstd
+          curl -sSL $zstd_base/zstd_common_module.c -o common.c
+          curl -sSL $zstd_base/compress/zstd_compress_module.c -o compress.c
+          curl -sSL $zstd_base/decompress/zstd_decompress_module.c -o decompress.c
+          curl -sSL $zstd_base/zstd_compat.h -o compat.h
+          
+          cd ../../..
+          echo "✅ LZ4/Zstd 算法更新完成"
+
+      - name: 🔧 Set gki_defconfig (设置编译配置)
         run: |
           cd kernel_workspace/kernel_platform
           echo "CONFIG_KSU=y" >> ./common/arch/arm64/configs/gki_defconfig
+
           # Add VFS configuration settings
           echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_MANUAL_HOOK=y" >> ./common/arch/arm64/configs/gki_defconfig
+          if [ "${{ github.event.inputs.enable_feature_x }}" = "true" ]; then
+            echo "CONFIG_KPM=y" >> ./common/arch/arm64/configs/gki_defconfig
+          fi
+          # 启用高级压缩支持
+          echo "CONFIG_CRYPTO_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CRYPTO_LZ4HC=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CRYPTO_ZSTD=y" >> ./common/arch/arm64/configs/gki_defconfig
+          
+          # 文件系统级压缩支持
+          echo "CONFIG_F2FS_FS_COMPRESSION=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_F2FS_FS_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_F2FS_FS_LZ4HC=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_F2FS_FS_ZSTD=y" >> ./common/arch/arm64/configs/gki_defconfig
+          
+          # 内核镜像压缩配置
+          echo "CONFIG_KERNEL_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig
           
           # Add SUSFS configuration settings
           echo "CONFIG_KSU_SUSFS=y" >> ./common/arch/arm64/configs/gki_defconfig
@@ -213,54 +236,6 @@ jobs:
           echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_OPEN_REDIRECT=y" >> ./common/arch/arm64/configs/gki_defconfig
-          
-          # LZ4KD配置*
-          if [ "${{ github.event.inputs.ZRAM }}" = "true" ]; then
-          CONFIG_FILE=./common/arch/arm64/configs/gki_defconfig
-
-            if [ "${{ github.event.inputs.KERNEL_VERSION }}" = "5.10" ]; then
-              echo "CONFIG_ZSMALLOC=y" >> "$CONFIG_FILE"
-              echo "CONFIG_ZRAM=y" >> "$CONFIG_FILE"
-              echo "CONFIG_MODULE_SIG=n" >> "$CONFIG_FILE"
-              echo "CONFIG_CRYPTO_LZO=y" >> "$CONFIG_FILE"
-              echo "CONFIG_ZRAM_DEF_COMP_LZ4KD=y" >> "$CONFIG_FILE"
-            fi
-
-            if [ "${{ github.event.inputs.KERNEL_VERSION }}" != "6.6" ] && [ "${{ github.event.inputs.KERNEL_VERSION }}" != "5.10" ]; then
-              if grep -q "CONFIG_ZSMALLOC" -- "$CONFIG_FILE"; then
-                sed -i 's/CONFIG_ZSMALLOC=m/CONFIG_ZSMALLOC=y/g' "$CONFIG_FILE"
-              else
-                echo "CONFIG_ZSMALLOC=y" >> "$CONFIG_FILE"
-              fi
-              sed -i 's/CONFIG_ZRAM=m/CONFIG_ZRAM=y/g' "$CONFIG_FILE"
-            fi
-
-            if [ "${{ github.event.inputs.KERNEL_VERSION }}" = "6.6" ]; then
-              echo "CONFIG_ZSMALLOC=y" >> "$CONFIG_FILE"
-              sed -i 's/CONFIG_ZRAM=m/CONFIG_ZRAM=y/g' "$CONFIG_FILE"
-            fi
-
-            if [ "${{ github.event.inputs.ANDROID_VERSION }}" = "android14" ] || [ "${{ github.event.inputs.ANDROID_VERSION }}" = "android15" ]; then
-              if [  -e ./common/modules.bzl ]; then
-                sed -i 's/"drivers\/block\/zram\/zram\.ko",//g; s/"mm\/zsmalloc\.ko",//g' "./common/modules.bzl"
-              fi
-              
-              echo "CONFIG_MODULE_SIG_FORCE=n" >> "$CONFIG_FILE"
-            elif [ "${{ github.event.inputs.KERNEL_VERSION }}" = "5.10" ] || [ "${{ github.event.inputs.KERNEL_VERSION }}" = "5.15" ]; then
-              rm "common/android/gki_aarch64_modules"
-              touch "common/android/gki_aarch64_modules"
-            fi
-
-            if grep -q "CONFIG_ZSMALLOC=y" "$CONFIG_FILE" && grep -q "CONFIG_ZRAM=y" "$CONFIG_FILE"; then
-              echo "CONFIG_CRYPTO_LZ4HC=y" >> "$CONFIG_FILE"
-              echo "CONFIG_CRYPTO_LZ4K=y" >> "$CONFIG_FILE"
-              echo "CONFIG_CRYPTO_LZ4KD=y" >> "$CONFIG_FILE"
-              echo "CONFIG_CRYPTO_842=y" >> "$CONFIG_FILE"
-              echo "CONFIG_CRYPTO_LZ4K_OPLUS=y" >> "$CONFIG_FILE"
-              echo "CONFIG_ZRAM_WRITEBACK=y" >> "$CONFIG_FILE"
-            fi
-          fi
-         
           
           # Remove check_defconfig
           sed -i 's/check_defconfig//' ./common/build.config.gki
@@ -328,44 +303,16 @@ jobs:
          rm -rf ./sched_ext/.git
 
       
-      - name: Build Kernel
+      - name: 🔨 Build Kernel (构建内核)
         run: |
-         # 加入 clang 到 PATH
-         export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r510928/bin:$PATH"
-         # 加入 ccache 到 PATH
-         export PATH="/usr/lib/ccache:$PATH" 
-
-         # 设置固定内核构建时间
-         export KERNEL_TIME="Tue Dec 17 23:36:49 UTC 2024"
-         export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
-         export SOURCE_DATE_EPOCH=$(date -d "$KERNEL_TIME" +%s)
-
-         # 打印验证
-         echo "KERNEL_TIME = $KERNEL_TIME"
-         echo "SOURCE_DATE_EPOCH = $SOURCE_DATE_EPOCH"
-
-         # 设置一些通用参数（便于后续维护）
-         export MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang \
-         RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc \
-         PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole \
-         LD=ld.lld HOSTLD=ld.lld O=out KCFLAGS=-Wno-error \
-         SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}"
-         echo "Using SOURCE_DATE_EPOCH: $SOURCE_DATE_EPOCH"
-
-         # 进入源码目录
-         cd kernel_workspace/kernel_platform/common
-
-         # 执行 defconfig
-         make -j$(nproc) $MAKE_ARGS gki_defconfig
-
-         # 编译全部目标
-         make -j$(nproc) $MAKE_ARGS all
-
-         # 创建输出目录并复制 Image
-         mkdir -p ../dist
-         cp out/arch/arm64/boot/Image ../dist/
-         
-         ccache --show-stats
+          export KBUILD_BUILD_TIMESTAMP="${KERNEL_TIME}"
+          export PATH="$GITHUB_WORKSPACE/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r510928/bin:$PATH"
+          export PATH="/usr/lib/ccache:$PATH"
+          sudo apt install libelf-dev
+          cd kernel_workspace/kernel_platform/common
+          make -j$(nproc --all) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole LD=ld.lld  HOSTLD=ld.lld O=out KCFLAGS+=-O2 gki_defconfig all
+          
+          ccache --show-stats
       
       - name: 验证内核构建时间
         run: |
