@@ -169,7 +169,6 @@ jobs:
           echo "隐藏应用_patch完成"
           
       - name: 🔧 Update compression algorithms (更新压缩算法)
-        if: ${{ inputs.enable_feature_y }}
         run: |
           cd kernel_workspace/kernel_platform/common
           
