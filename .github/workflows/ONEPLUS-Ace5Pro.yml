@@ -48,11 +48,6 @@ on:
         default: false
         type: boolean
         
-      LTO:
-        description: '启用 LTO'
-        required: true
-        default: true
-        type: boolean
       
 
 jobs:
@@ -279,7 +274,6 @@ jobs:
          git add -A && git commit -a -m "BUILD Kernel"
 
       - name: 启用LTO
-        if: ${{ fromJSON(github.event.inputs.LTO) }}
         run: |
          cd kernel_workspace/kernel_platform
          echo "CONFIG_LTO_CLANG=y" >> ./common/arch/arm64/configs/gki_defconfig
