@@ -105,9 +105,9 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ env.CCACHE_DIR }}
-          key: ccache-${{ runner.os }}-${{ github.ref }}-${{ env.FEIL }}
+          key: ccache-${{ runner.os }}-${{ github.ref }}-
           restore-keys: |
-            ccache-${{ runner.os }}-${{ env.FEIL }}-
+            ccache-${{ runner.os }}-
             ccache-${{ runner.os }}-
 
       - name: 📥 Init ccache (如果是第一次运行则初始化Cceche)
