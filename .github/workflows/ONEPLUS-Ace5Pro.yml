@@ -51,30 +51,20 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
-      CCACHE_NOHASHDIR: "true"
-      CCACHE_HARDLINK: "true"
     steps:
       - name: 📊 Check disk space (检查磁盘空间)
         run: |
           echo "构建前磁盘空间："
           df -h
-      
-      - name: Maximize build space
-        uses: easimon/maximize-build-space@master
-        with:
-          root-reserve-mb: 8192
-          temp-reserve-mb: 2048
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-          remove-codeql: 'true'
           
       - name: Configure Git
         run: |
          git config --global user.name "build"
          git config --global user.email "2772000679@qq.com"
+
+      - name: ⚙️ Set device-specific CCACHE_DIR (设置对应机型Cceche路径)
+        run: |
+          echo "CCACHE_DIR=$HOME/.ccache_${FEIL}" >> $GITHUB_ENV
 
       - name: 🛠 Cache APT packages (缓存APT包)
         uses: actions/cache@v3
@@ -83,7 +73,7 @@ jobs:
           key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/ONEPLUS-Ace5Pro.yml') }}
           restore-keys: |
             ${{ runner.os }}-apt-
-      
+
       - name: 📦 Install dependencies (安装依赖)
         run: |
           if [ ! -d "/var/lib/apt/lists" ] || [ -z "$(ls -A /var/lib/apt/lists)" ]; then
@@ -100,14 +90,15 @@ jobs:
 
           ccache --version
           echo "依赖安装完成"
-      
+
+          
       - name: 📥 Restore ccache (载入 机型：${{ env.DEVICES_NAME }}的 ccache 缓存)
         uses: actions/cache@v3
         with:
           path: ${{ env.CCACHE_DIR }}
-          key: ccache-${{ runner.os }}-${{ github.ref }}-
+          key: ccache-${{ runner.os }}-${{ github.ref }}-${{ env.FEIL }}
           restore-keys: |
-            ccache-${{ runner.os }}-
+            ccache-${{ runner.os }}-${{ env.FEIL }}-
             ccache-${{ runner.os }}-
 
       - name: 📥 Init ccache (如果是第一次运行则初始化Cceche)
