@@ -78,32 +78,40 @@ jobs:
           git config --global user.name "ace5pro"
           git config --global user.email "521418@qq.com"
 
+      - name: 🛠 Configure APT caching (配置APT缓存)
+        run: |
+          APT_CACHE_DIR="$HOME/apt-cache"
+          mkdir -p "$APT_CACHE_DIR"/{archives,lists/partial}
+          echo "Dir::Cache \"$APT_CACHE_DIR\";" | sudo tee /etc/apt/apt.conf.d/90user-cache
+          echo "Dir::Cache::archives \"$APT_CACHE_DIR/archives\";" | sudo tee -a /etc/apt/apt.conf.d/90user-cache
+          echo "Dir::State::lists \"$APT_CACHE_DIR/lists\";" | sudo tee -a /etc/apt/apt.conf.d/90user-cache
+          echo "Acquire::Check-Valid-Until \"false\";" | sudo tee -a /etc/apt/apt.conf.d/90user-cache
+          echo "Acquire::Languages \"none\";" | sudo tee -a /etc/apt/apt.conf.d/90user-cache
+          sudo chown -R $USER:$USER "$APT_CACHE_DIR"
+
       - name: 🛠 Cache APT packages (缓存APT包)
         uses: actions/cache@v3
         with:
-          path: /var/lib/apt/lists
-          key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/Build_oneplus_sm8750.yml') }}
+          path: ${{ env.HOME }}/apt-cache
+          key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/Build_oneplus_sm8750.yaml') }}
           restore-keys: |
             ${{ runner.os }}-apt-
 
       - name: 📦 Install dependencies (安装依赖)
         run: |
-          if [ ! -d "/var/lib/apt/lists" ] || [ -z "$(ls -A /var/lib/apt/lists)" ]; then
-            echo "更新APT包列表..."
-            sudo apt update -qq
-          else
-            echo "使用缓存的APT列表"
-          fi
-          sudo apt install -y --no-install-recommends \
+          sudo rm -f /var/lib/apt/lists/lock /var/lib/dpkg/lock
+          APT_CACHE_DIR="$HOME/apt-cache"
+          mkdir -p "$APT_CACHE_DIR/lists/partial"
+          sudo apt -o Dir::Cache="$APT_CACHE_DIR" update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt -o Dir::Cache="$APT_CACHE_DIR" install -yq --no-install-recommends \
             python3 git curl ccache libelf-dev \
             build-essential flex bison libssl-dev \
             libncurses-dev liblz4-tool zlib1g-dev \
             libxml2-utils rsync unzip
-
-          ccache --version
-          echo "依赖安装完成"
-
           
+          echo "✅ 依赖安装完成"
+          
+      - name: 📥 Restore ccache (载入 机型：${{ env.DEVICES_NAME }}的 ccache 缓存)
       - name: 📥 Restore ccache (载入 机型：${{ env.DEVICES_NAME }}的 ccache 缓存)
         uses: actions/cache@v3
         with:
@@ -149,11 +157,21 @@ jobs:
          rm kernel_platform/common/android/abi_gki_protected_exports_* || echo "No protected exports!"
          rm kernel_platform/msm-kernel/android/abi_gki_protected_exports_* || echo "No protected exports!"
          
+      - name: Export suffix
+        run: |
+          echo "TAG_SUFFIX=${{ github.event.inputs.sukisu_CPU }}" >> $GITHUB_ENV
+         
       - name: Set up SukiSU
         run: |
          cd kernel_workspace/kernel_platform
          curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs-main
          cd ./KernelSU
+         # 替换 get_ksu_kernel_version 块为自定义格式
+         sed -i "/^define get_ksu_kernel_version$/,/^endef$/c\
+         define get_ksu_kernel_version\\
+         v\$(KSU_API_VERSION_LOCAL)-sukisu-\$(KSU_API_VERSION)-cpu-${TAG_SUFFIX}\\
+         endef" kernel/Makefile
+         echo "✅ Injected SukiSU kernel version: v\$(KSU_API_VERSION_LOCAL)-sukisu-\$(KSU_API_VERSION)-by-${TAG_SUFFIX}"
          KSU_VERSION=$(expr $(/usr/bin/git rev-list --count main) "+" 10700)
          echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
          export KSU_VERSION=$KSU_VERSION
