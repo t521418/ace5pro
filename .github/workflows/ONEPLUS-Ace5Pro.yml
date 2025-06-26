@@ -335,6 +335,11 @@ jobs:
          rm -rf ./sched_ext/.git
 
       
+      - name: 拉取afdo
+        run: |
+          cd kernel_workspace/kernel_platform/
+          git clone https://github.com/t521418/afdo.git
+            
       - name: 🔨 Build Kernel (构建内核)
         run: |
           export PATH="/usr/lib/ccache:$PATH"
@@ -345,6 +350,13 @@ jobs:
           export CCACHE_HARDLINK="true"
           export CCACHE_DIR="${{ env.CCACHE_DIR }}"
           export CCACHE_MAXSIZE="8G"
+          
+          # 设置 AFDO 配置文件路径
+          export AFDO_PROFILE="${{ github.workspace }}/kernel_workspace/kernel_platform/afdo/kernel.afdo"
+          if [ ! -f "$AFDO_PROFILE" ]; then
+          echo "Error: AFDO profile not found at $AFDO_PROFILE"
+          exit 1
+          fi
           
           export KBUILD_BUILD_TIMESTAMP="${KERNEL_TIME}"
           
