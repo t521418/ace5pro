@@ -357,7 +357,13 @@ jobs:
           echo "Error: AFDO profile not found at $AFDO_PROFILE"
           exit 1
           fi
+          export KCFLAGS="-Wno-error -fauto-profile=$AFDO_PROFILE"
+          export MAKE_ARGS="SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}"
           
+          # 打印验证
+          echo "KERNEL_TIME = $KERNEL_TIME"
+          echo "SOURCE_DATE_EPOCH = $SOURCE_DATE_EPOCH"
+          echo "Using KCFLAGS: -Wno-error -fauto-profile=$AFDO_PROFILE"
           export KBUILD_BUILD_TIMESTAMP="${KERNEL_TIME}"
           
           sudo apt install -y libelf-dev
