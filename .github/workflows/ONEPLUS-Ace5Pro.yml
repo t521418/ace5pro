@@ -2,13 +2,6 @@ name: OnePlus Ace5Pro
 on:
   workflow_dispatch:
     inputs:
-      REPO_MANIFEST:
-        description: "请选择要编译的机型："
-        required: true
-        type: choice
-        options:
-          - 'oneplus_ace5_pro'
-        default: 'oneplus_ace5_pro'
       boot:
         type: choice
         description: "选择修补boot方法"
