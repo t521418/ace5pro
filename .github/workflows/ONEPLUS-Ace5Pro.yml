@@ -58,43 +58,6 @@ jobs:
         run: |
           git config --global user.name "ace5pro"
           git config --global user.email "521418@qq.com"
-
-      # 1. 拉取仓库  
-      - name: Checkout  
-        uses: actions/checkout@v4  
-      
-      # 2. 安装构建依赖（包括 ccache）  
-      - name: Install Dependencies  
-        run: |  
-         sudo apt-get update  
-         sudo apt-get install -y python3 git curl ccache libelf-dev  
-
-      # 3. 恢复 ccache 缓存  
-      - name: Restore ccache
-        uses: actions/cache@v3
-        with:
-         path: /home/runner/.ccache
-         key: ${{ runner.os }}-${{ github.repository }}-v2
-         restore-keys: |
-          ${{ runner.os }}-${{ github.repository }}-
-          ${{ runner.os }}-
-          ccache-
-
-      # 4. 设置 ccache 环境变量  
-      - name: Setup ccache environment  
-        run: |  
-         echo "CCACHE_DIR=/home/runner/.ccache" >> $GITHUB_ENV  
-         echo "CCACHE_MAXSIZE=8G" >> $GITHUB_ENV  
-         echo "CCACHE_COMPILERCHECK=%compiler% -dumpmachine; %compiler% -dumpversion" >> $GITHUB_ENV  
-         echo "CCACHE_NOHASHDIR=true" >> $GITHUB_ENV  
-         echo "CCACHE_HARDLINK=true" >> $GITHUB_ENV  
-         echo "CCACHE_BASEDIR=${{ github.workspace }}" >> $GITHUB_ENV  
-         echo "CCACHE_LOGFILE=${{ github.workspace }}/ccache.log" >> $GITHUB_ENV  
-         echo "/usr/lib/ccache" >> $GITHUB_PATH  
-         
-      - name: Show ccache stats
-        run: |
-         ccache -s || true
       
       - name: Install repo tool
         run: |
@@ -287,62 +250,20 @@ jobs:
          rm -rf ./sched_ext/.git
 
       
-      - name: 拉取afdo
-        run: |
-          cd kernel_workspace/kernel_platform/
-          git clone https://github.com/t521418/afdo.git
-            
       - name: Set build timestamp
         run: |         
          export SOURCE_DATE_EPOCH=$(date -d "Tue Dec 17 23:36:49 UTC 2024" +%s)
          echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> $GITHUB_ENV
    
-      - name: Build Kernel
+      - name: Build kernel
         run: |
-         # 加入 clang 到 PATH
-         export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r510928/bin:$PATH"
-         # 加入 ccache 到 PATH
-         export PATH="/usr/lib/ccache:$PATH" 
-
-         # 设置固定内核构建时间
-         export KERNEL_TIME="Tue Dec 17 23:36:49 UTC 2024"
-         export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
-         export SOURCE_DATE_EPOCH=$(date -d "$KERNEL_TIME" +%s)
-         # 设置 AFDO 配置文件路径
-         export AFDO_PROFILE="${{ github.workspace }}/kernel_workspace/kernel_platform/afdo/kernel.afdo"
-         if [ ! -f "$AFDO_PROFILE" ]; then
-           echo "Error: AFDO profile not found at $AFDO_PROFILE"
-         exit 1
+         cd kernel_workspace
+         if [ -e ./kernel_platform/build/build.sh ]; then
+         LTO=thin ./kernel_platform/oplus/build/oplus_build_kernel.sh ${{ github.event.inputs.CPUD }} gki    
+         else
+         cd kernel_platform
+         tools/bazel run --config=fast --config=stamp --lto=thin //common:kernel_aarch64_dist -- --dist_dir=dist
          fi
-
-         # 打印验证
-         echo "KERNEL_TIME = $KERNEL_TIME"
-         echo "SOURCE_DATE_EPOCH = $SOURCE_DATE_EPOCH"
-         echo "Using KCFLAGS: -Wno-error -fauto-profile=$AFDO_PROFILE"
-
-         # 设置一些通用参数（便于后续维护）
-         export KCFLAGS="-Wno-error -fauto-profile=$AFDO_PROFILE"
-         export MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang \
-         RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc \
-         PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole \
-         LD=ld.lld HOSTLD=ld.lld O=out SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}"
-
-         # 进入源码目录
-         cd kernel_workspace/kernel_platform/common
-
-         # 执行 defconfig
-         make -j$(nproc) $MAKE_ARGS gki_defconfig
-
-         # 编译全部目标
-         make -j$(nproc) $MAKE_ARGS all
-
-         # 创建输出目录并复制 Image
-         mkdir -p ../dist
-         cp out/arch/arm64/boot/Image ../dist/
-
-      - name: 验证内核构建时间
-        run: |
-         strings kernel_workspace/kernel_platform/common/out/vmlinux | grep "UTC"
       
       - name: Make AnyKernel3
         run: |
@@ -366,7 +287,3 @@ jobs:
          name: SuKiSu_${{ env.KSUVER }}_${{ github.event.inputs.FEIL }}
          path: ./AnyKernel3/*
          
-      - name: 📊 Post-build disk check (构建后空间检查)
-        run: |
-          echo "构建后磁盘空间："
-          df -h
