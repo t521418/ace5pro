@@ -273,9 +273,9 @@ jobs:
          
       - name: Make AnyKernel3
         run: |
-         git clone https://github.com/WildPlusKernel/AnyKernel3.git --depth=1
+         git clone https://github.com/t521418/AnyKernel3.git --depth=1
          rm -rf ./AnyKernel3/.git
-         if [ "${{ github.event.inputs.KERNEL_VERSION }}" = "6.1" ]; then
+         if [ "${{ github.event.inputs.KERNEL_VERSION }}" = "6.6" ]; then
            cp kernel_workspace/kernel_platform/dist/Image ./AnyKernel3/
          else
            cp kernel_workspace/out/dist/Image ./AnyKernel3/
