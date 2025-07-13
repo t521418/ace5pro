@@ -260,7 +260,7 @@ jobs:
       
       - name: Make AnyKernel3
         run: |
-         if [ "${{ github.event.inputs.KERNEL_VERSION }}" = "6.1" ]; then
+         if [ "${{ github.event.inputs.KERNEL_VERSION }}" = "6.6" ]; then
            cd kernel_workspace/kernel_platform/dist/
          else
            cd kernel_workspace/out/dist/
